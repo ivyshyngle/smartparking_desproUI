@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 sys.path.append(os.path.abspath(os.path.join('Mask_RCNN')))
 os.chdir('Mask_RCNN')
@@ -20,7 +21,6 @@ from shapely.geometry import Polygon as shapely_poly
 from IPython.display import clear_output, Image, display, HTML
 import io
 import base64
-#get_ipython().run_line_magic('matplotlib', 'inline')
 
 class Config(mrcnn.config.Config):
     NAME = "coco_pretrained_model_config"
@@ -45,7 +45,7 @@ model.load_weights(COCO_MODEL_PATH, by_name=True)
 # if not os.path.exists("./data"):
 #     os.makedirs("./data")
 
-VIDEO_SOURCE = "data/parkiranft_Trim.mp4"
+VIDEO_SOURCE = "data/parkiran2.mp4"
 PARKING_REGIONS = "data/regionparkiranft.p"
 with open(PARKING_REGIONS, 'rb') as f:
     parked_car_boxes = pickle.load(f)
@@ -94,48 +94,56 @@ def arrayShow (imageArray):
     return Image(data=encoded.decode('ascii'))
 
 alpha = 0.6
-video_capture = cv2.VideoCapture(VIDEO_SOURCE)
-# video_capture = cv2.VideoCapture(0)
-# cnt=0
+# video_capture = cv2.VideoCapture(VIDEO_SOURCE)
+video_capture = cv2.VideoCapture(2)
+cnt=0
 
-video_FourCC    = cv2.VideoWriter_fourcc('M','J','P','G')
-video_fps       = video_capture.get(cv2.CAP_PROP_FPS)
-video_size      = (int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH)),
-                    int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-out = cv2.VideoWriter("out.avi", video_FourCC, video_fps, video_size)
+# #Video Writer
+# video_FourCC    = cv2.VideoWriter_fourcc('M','J','P','G')
+# video_fps       = video_capture.get(cv2.CAP_PROP_FPS)
+# video_size      = (int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH)),
+#                     int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+# out = cv2.VideoWriter("out.avi", video_FourCC, video_fps, video_size)
 
+# previous_time = 0
 while video_capture.isOpened():
+
+    # #Capture frame every 10s
+    # current_time = time.time()
+    # delta_time = current_time - previous_time
+    # if delta_time <= 10:
+    #     continue
+    # else:
+    #     previous_time = current_time
+
     success, frame = video_capture.read()
-    
     overlay = frame.copy()
     if not success:
         break
 
     rgb_image = frame[:, :, ::-1]
     results = model.detect([rgb_image], verbose=0)
-
     car_boxes = get_car_boxes(results[0]['rois'], results[0]['class_ids'])
-    overlaps = compute_overlaps(parked_car_boxes, car_boxes)
-    cnt=0
-    #print(overlaps)
-    for parking_area, overlap_areas in zip(parked_car_boxes, overlaps):  
-        max_IoU_overlap = np.max(overlap_areas)
-        if max_IoU_overlap < 0.15:
-            cv2.fillPoly(overlay, [np.array(parking_area)], (71, 27, 92))
-            free_space = True
-        else:
-            cnt += 1    
-    cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+    if car_boxes:
+        overlaps = compute_overlaps(parked_car_boxes, car_boxes)
+        cnt=0
+        #print(overlaps)
+        for parking_area, overlap_areas in zip(parked_car_boxes, overlaps):  
+            max_IoU_overlap = np.max(overlap_areas)
+            if max_IoU_overlap < 0.15:
+                cv2.fillPoly(overlay, [np.array(parking_area)], (71, 27, 92))
+                free_space = True
+                cnt+=1
+        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+    
+    cv2.imshow('output',frame)
+
     print(cnt)
-    out.write(frame)
-
-    clear_output(wait=True)
-    img = arrayShow(frame)
-    display(img)
-
+    # out.write(frame)
+    
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 video_capture.release()
-out.release()
+# out.release()
 cv2.destroyAllWindows()

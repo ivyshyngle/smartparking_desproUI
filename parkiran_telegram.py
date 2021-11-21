@@ -1,17 +1,3 @@
-# To add a new cell, type '# %%'
-# To add a new markdown cell, type '# %% [markdown]'
-# %%
-from IPython import get_ipython
-
-# %% [markdown]
-# # Parking Space Detection
-# Cloning M-RCNN repository
-
-# %%
-# !git clone https://github.com/matterport/Mask_RCNN
-
-
-# %%
 import os
 import sys
 import telebot
@@ -23,10 +9,6 @@ bot = telebot.TeleBot(API_KEY)
 
 cwd = os.getcwd()
 print("Current working directory: {0}".format(cwd))
-# %% [markdown]
-# ### Importing required modules
-
-# %%
 
 import numpy as np
 import cv2
@@ -42,12 +24,7 @@ from shapely.geometry import Polygon as shapely_poly
 from IPython.display import clear_output, Image, display, HTML
 import io
 import base64
-#get_ipython().run_line_magic('matplotlib', 'inline')
 
-# %% [markdown]
-# ### Configuring M-RCNN
-
-# %%
 class Config(mrcnn.config.Config):
     NAME = "coco_pretrained_model_config"
     IMAGES_PER_GPU = 1
@@ -58,54 +35,25 @@ config = Config()
 config.display()
 
 
-# %%
 ROOT_DIR = Path(".")
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 
-# %% [markdown]
-# ### Download pre-trained Model
-
-# %%
 if not os.path.exists(COCO_MODEL_PATH):
     mrcnn.utils.download_trained_weights(COCO_MODEL_PATH)
 
-# %% [markdown]
-# # Loading pre-trained model 
-
-# %%
 model = MaskRCNN(mode="inference", model_dir=MODEL_DIR, config=Config())
 
-
-# %%
 model.load_weights(COCO_MODEL_PATH, by_name=True)
 
-# %% [markdown]
-# #### Create data directory
+# if not os.path.exists("./data"):
+#     os.makedirs("./data")
 
-# %%
-#  This will contain test videos and images
-if not os.path.exists("./data"):
-    os.makedirs("./data")
-
-# %% [markdown]
-# ### Uploading data
-# upload your video file and praking regions file using the sidebar. See image for reference.
-# 
-# ![alt text](https://i.imgur.com/UMu9xV5.png)
-# 
-# After uploading the files. Edit the cell below to load the correct files.
-
-# %%
 VIDEO_SOURCE = "data/parkiranft_Trim.mp4"
 PARKING_REGIONS = "data/regionparkiranft.p"
 with open(PARKING_REGIONS, 'rb') as f:
     parked_car_boxes = pickle.load(f)
 
-# %% [markdown]
-# ### Function to filter out car boxes
-
-# %%
 def get_car_boxes(boxes, class_ids):
     car_boxes = []
 
@@ -116,10 +64,6 @@ def get_car_boxes(boxes, class_ids):
 
     return np.array(car_boxes)
 
-# %% [markdown]
-# ### Function to compute IoU
-
-# %%
 def compute_overlaps(parked_car_boxes, car_boxes):
     
     new_car_boxes = []
@@ -150,19 +94,11 @@ def compute_overlaps(parked_car_boxes, car_boxes):
 
     return overlaps
 
-# %% [markdown]
-# ### Function to display processed images
-
-# %%
 def arrayShow (imageArray):
     ret, png = cv2.imencode('.png', imageArray)
     encoded = base64.b64encode(png)
     return Image(data=encoded.decode('ascii'))
 
-# %% [markdown]
-# ### Putting it all together
-
-# %%
 alpha = 0.6
 video_capture = cv2.VideoCapture(VIDEO_SOURCE)
 # video_capture = cv2.VideoCapture(0)
@@ -180,7 +116,6 @@ info_message = ''
 @bot.message_handler(commands=['info'])
 def info(message):
   bot.send_message(message.chat.id, info_message)
-
 
 while video_capture.isOpened():
     success, frame = video_capture.read()
@@ -217,9 +152,3 @@ while video_capture.isOpened():
 video_capture.release()
 out.release()
 cv2.destroyAllWindows()
-
-
-# %%
-
-
-

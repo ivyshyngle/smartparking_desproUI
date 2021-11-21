@@ -79,11 +79,11 @@ def compute_overlaps(parked_car_boxes, car_boxes):
 
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('video_path', help="Video file")
-    # parser.add_argument('regions_path', help="Regions file",
-    #                     default="regions.p")
-    # args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('video_path', help="Video file")
+    parser.add_argument('regions_path', help="Regions file",
+                        default="regions.p")
+    args = parser.parse_args()
 
     regions = "data/regionparkiranft.p"
     with open(regions, 'rb') as f:
@@ -126,8 +126,6 @@ if __name__ == "__main__":
         out.write(frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-
-    
 
     video_capture.release()
     out.release()
